@@ -28,7 +28,7 @@
 //! #[async_std::main]
 //! async fn main() -> Result<(), Error> {
 //!     // Iterate through responses from each Cast device, asking for new devices every 15s
-//!     let stream = mdns::discover::all(SERVICE_NAME, Duration::from_secs(15))?.listen();
+//!     let stream = mdns::discover::all(SERVICE_NAME, Duration::from_secs(15), mdns::ResponseType::Multicast)?.listen();
 //!     pin_mut!(stream);
 //!
 //!     while let Some(Ok(response)) = stream.next().await {
@@ -58,7 +58,7 @@
 #![recursion_limit = "1024"]
 
 pub use self::errors::Error;
-pub use self::response::{Record, RecordKind, Response};
+pub use self::response::{Record, RecordKind, Response, ResponseType};
 
 pub mod discover;
 pub mod resolve;

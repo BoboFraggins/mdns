@@ -11,7 +11,7 @@
 //!
 //! #[async_std::main]
 //! async fn main() -> Result<(), Error> {
-//!     if let Some(response) = mdns::resolve::one(SERVICE_NAME, HOST, Duration::from_secs(15)).await? {
+//!     if let Some(response) = mdns::resolve::one(SERVICE_NAME, HOST, Duration::from_secs(15), mdns::ResponseType::Multicast).await? {
 //!         println!("{:?}", response);
 //!     }
 //!
@@ -19,7 +19,7 @@
 //! }
 //! ```
 
-use crate::{Error, Response};
+use crate::{Error, Response, ResponseType};
 use futures_util::{StreamExt, pin_mut, TryFutureExt};
 use std::time::Duration;
 
@@ -28,12 +28,13 @@ pub async fn one<S>(
     service_name: &str,
     host_name: S,
     timeout: Duration,
+    response_type: ResponseType,
 ) -> Result<Option<Response>, Error>
 where
     S: AsRef<str>,
 {
     // by setting the query interval higher than the timeout we ensure we only make one query
-    let stream = crate::discover::all(service_name, timeout * 2)?.listen();
+    let stream = crate::discover::all(service_name, timeout * 2, response_type)?.listen();
     pin_mut!(stream);
 
     let process = async {
@@ -55,12 +56,13 @@ pub async fn multiple<S>(
     service_name: &str,
     host_names: &[S],
     timeout: Duration,
+    response_type: ResponseType,
 ) -> Result<Vec<Response>, Error>
 where
     S: AsRef<str>,
 {
     // by setting the query interval higher than the timeout we ensure we only make one query
-    let stream = crate::discover::all(service_name, timeout * 2)?.listen();
+    let stream = crate::discover::all(service_name, timeout * 2, response_type)?.listen();
     pin_mut!(stream);
 
     let mut found = Vec::new();

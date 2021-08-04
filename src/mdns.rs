@@ -1,4 +1,4 @@
-use crate::{Error, Response};
+use crate::{Error, Response, ResponseType};
 
 use std::{io, net::Ipv4Addr};
 
@@ -61,14 +61,18 @@ pub struct mDNSSender<> {
 
 impl mDNSSender {
     /// Send multicasted DNS queries.
-    pub async fn send_request(&mut self) -> Result<(), Error> {
+    pub async fn send_request(&mut self, response_type: ResponseType) -> Result<(), Error> {
         let mut builder = dns_parser::Builder::new_query(0, false);
+        let query_class = match response_type {
+            ResponseType::Multicast => dns_parser::QueryClass::IN,
+            ResponseType::Unicast => dns_parser::QueryClass::MdnsUnicastResponse,
+        };
         let prefer_unicast = false;
         builder.add_question(
             &self.service_name,
             prefer_unicast,
             dns_parser::QueryType::PTR,
-            dns_parser::QueryClass::IN,
+            query_class,
         );
         let packet_data = builder.build().unwrap();
 

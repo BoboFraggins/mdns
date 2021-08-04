@@ -6,7 +6,8 @@ const SERVICE_NAME: &'static str = "_googlecast._tcp.local";
 
 #[async_std::main]
 async fn main() -> Result<(), Error> {
-    let stream = mdns::discover::all(SERVICE_NAME, Duration::from_secs(15))?.listen();
+    let stream = mdns::discover::all(SERVICE_NAME, Duration::from_secs(15),
+                                     mdns::ResponseType::Multicast)?.listen();
     pin_mut!(stream);
     while let Some(Ok(response)) = stream.next().await {
         let addr = response.socket_address();

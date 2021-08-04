@@ -18,7 +18,7 @@ categories = ["network-programming"]
 keywords = ["mdns", "dns", "multicast", "chromecast", "discovery"]
 
 [dependencies]
-dns-parser = "0.8.0"
+dns-parser = { git = "git://github.com/BoboFraggins/dns-parser" }
 net2 = "0.2"
 err-derive = "0.2.1"
 futures-core = "0.3.1"

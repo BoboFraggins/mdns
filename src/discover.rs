@@ -11,7 +11,7 @@
 //!
 //! #[async_std::main]
 //! async fn main() -> Result<(), Error> {
-//!     let stream = mdns::discover::all(SERVICE_NAME, Duration::from_secs(15))?.listen();
+//!     let stream = mdns::discover::all(SERVICE_NAME, Duration::from_secs(15), mdns::ResponseType::Multicast)?.listen();
 //!     pin_mut!(stream);
 //!
 //!     while let Some(Ok(response)) = stream.next().await {
@@ -22,7 +22,7 @@
 //! }
 //! ```
 
-use crate::{mDNSListener, Error, Response};
+use crate::{mDNSListener, Error, Response, ResponseType};
 
 use std::time::Duration;
 
@@ -42,6 +42,9 @@ pub struct Discovery {
     mdns_sender: mDNSSender,
     mdns_listener: mDNSListener,
 
+    /// Whether to request a Multicast or Unicast response
+    response_type: ResponseType,
+
     /// Whether we should ignore empty responses.
     ignore_empty: bool,
 
@@ -50,17 +53,18 @@ pub struct Discovery {
 }
 
 /// Gets an iterator over all responses for a given service on all interfaces.
-pub fn all<S>(service_name: S, mdns_query_interval: Duration) -> Result<Discovery, Error>
+pub fn all<S>(service_name: S, mdns_query_interval: Duration, response_type: ResponseType) -> Result<Discovery, Error>
 where
     S: AsRef<str>,
 {
-    interface(service_name, mdns_query_interval, Ipv4Addr::new(0, 0, 0, 0))
+    interface(service_name, mdns_query_interval, response_type, Ipv4Addr::new(0, 0, 0, 0))
 }
 
 /// Gets an iterator over all responses for a given service on a given interface.
 pub fn interface<S>(
     service_name: S,
     mdns_query_interval: Duration,
+    response_type: ResponseType,
     interface_addr: Ipv4Addr,
 ) -> Result<Discovery, Error>
 where
@@ -73,6 +77,7 @@ where
         service_name,
         mdns_sender,
         mdns_listener,
+        response_type,
         ignore_empty: true,
         send_request_interval: mdns_query_interval,
     })
@@ -92,13 +97,14 @@ impl Discovery {
         let service_name = self.service_name;
         let response_stream = self.mdns_listener.listen().map(StreamResult::Response);
         let sender = self.mdns_sender.clone();
+        let response_type = self.response_type.clone();
 
         let interval_stream = async_std::stream::interval(self.send_request_interval)
             // I don't like the double clone, I can't find a prettier way to do this
             .map(move |_| {
                 let mut sender = sender.clone();
                 async_std::task::spawn(async move {
-                    let _ = sender.send_request().await;
+                    let _ = sender.send_request(response_type).await;
                 });
                 StreamResult::Interval
             });

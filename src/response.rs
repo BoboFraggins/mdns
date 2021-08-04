@@ -18,6 +18,13 @@ pub struct Record {
     pub kind: RecordKind,
 }
 
+/// The CLASS value according to RFC 1035
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
+pub enum ResponseType {
+    Multicast,
+    Unicast,
+}
+
 /// A specific DNS record variant.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum RecordKind {
@@ -157,7 +164,7 @@ impl RecordKind {
             RData::SOA(..) => {
                 RecordKind::Unimplemented("SOA record handling is not implemented".into())
             }
-            RData::Unknown(data) => RecordKind::Unimplemented(data.to_owned()),
+            RData::Unknown(_, data) => RecordKind::Unimplemented(data.to_owned()),
         }
     }
 }
